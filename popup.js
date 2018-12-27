@@ -1,16 +1,13 @@
-
 /**
  * call setKeyMode
  * @param {string} mode keyMode string
  */
-
 function setKeyOption(mode) {
     chrome.tabs.query({}, (tabs) => {
-        const setCode = "window.__spatialNavigation__.setKeyMode('";
-
+        const setCode = `window.__spatialNavigation__.setKeyMode('${mode}')`;
         for (let i = 0; i < tabs.length; i++) {
             chrome.tabs.executeScript(tabs[i].id, {
-                code: setCode.concat(mode, "')")
+                code: setCode
             }, (err) => {
                 const e = chrome.runtime.lastError;
                 if (e !== undefined) {
@@ -24,12 +21,13 @@ function setKeyOption(mode) {
 /**
  * save keyMode options.
  */
-function saveOptions() {
-    const mode = document.getElementById("keyMode").value;
-    const isOn = document.getElementById("switch").checked;
-    const isVisible = document.getElementById("visNextTarget").checked;
-    const CurrentOn = document.getElementById("visActive").checked;
-    const VisNone = document.getElementById("visNone").checked;
+function onChangeOptions() {
+    const isOn = document.getElementById('switch').checked;
+    const mode = document.getElementById('keyMode').value;
+    const isVisible = document.getElementById('visNextTarget').checked;
+    const CurrentOn = document.getElementById('visActive').checked;
+    const VisNone = document.getElementById('visNone').checked;
+    const optionAreaDiv = document.getElementById('optionArea');
     chrome.storage.local.set({
         keyMode: mode,
         isOn,
@@ -38,17 +36,18 @@ function saveOptions() {
         VisNone
     }, () => {
         // Update status to let user know options were saved.
-        const status = document.getElementById("status");
-
-        if (isOn == false) {
-            setKeyOption("NONE");
-        } else {
+        const status = document.getElementById('status');
+        if (isOn) {
             setKeyOption(keyMode.value);
+            optionAreaDiv.style.display = 'block';
+        } else {
+            setKeyOption('NONE');
+            optionAreaDiv.style.display = 'NONE';
         }
 
-        status.textContent = "Options saved.";
+        status.textContent = 'Options saved.';
         setTimeout(() => {
-            status.textContent = "";
+            status.textContent = '';
         }, 750);
     });
 }
@@ -59,26 +58,32 @@ function saveOptions() {
 function restoreOptions() {
     // Use default value color = 'ARROW' and isOn = true.
     chrome.storage.local.get({
-        keyMode: "ARROW",
+        keyMode: 'ARROW',
         isOn: true,
         isVisible: false,
         CurrentOn: false,
         VisNone : false
     }, (items) => {
-        document.getElementById("keyMode").value = items.keyMode;
-        document.getElementById("switch").checked = items.isOn;
-        document.getElementById("visNextTarget").checked = items.isVisible;
-        document.getElementById("visActive").checked = items.CurrentOn;
-        document.getElementById("visNone").checked = items.VisNone;
+        document.getElementById('keyMode').value = items.keyMode;
+        document.getElementById('switch').checked = items.isOn;
+        document.getElementById('visNextTarget').checked = items.isVisible;
+        document.getElementById('visActive').checked = items.CurrentOn;
+        document.getElementById('visNone').checked = items.VisNone;
 
-        if (items.isOn == false) {
-            setKeyOption("NONE");
-        } else {
+        const optionAreaDiv = document.getElementById('optionArea');
+        if (items.isOn) {
             setKeyOption(items.keyMode.value);
+            optionAreaDiv.style.display = 'block';
+        } else {
+            setKeyOption('NONE');
+            optionAreaDiv.style.display = 'NONE';
         }
     });
 }
 
-
 window.onload = restoreOptions;
-document.getElementById("save").addEventListener("click", saveOptions);
+document.getElementById('switch').addEventListener('change', onChangeOptions);
+document.getElementById('keyMode').addEventListener('change', onChangeOptions);
+document.getElementById('visNextTarget').addEventListener('change', onChangeOptions);
+document.getElementById('visActive').addEventListener('change', onChangeOptions);
+document.getElementById('visNone').addEventListener('change', onChangeOptions);
