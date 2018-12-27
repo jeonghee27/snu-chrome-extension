@@ -33,7 +33,7 @@
 ## How to install
 
  1. Clone the repository `git clone https://github.com/lgewst/snu-chrome-extension-1.git`.
- 2. Using chrome, navigate to `chrome://extension`.
+ 2. Using chrome, navigate to `chrome://extensions`.
  3. Turn on the **Developer mode**.
  4. click **LOAD UNPACKED** and select the extension directory.
 
