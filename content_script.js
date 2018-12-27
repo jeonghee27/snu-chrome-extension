@@ -14,6 +14,14 @@ const ACTIVE_ELEMENT_HIGHLIGHT = 'active_element_highlight';
 let left; let right; let up; let down; let actElement;
 
 /**
+ * Event handler for initializing.
+ */
+document.addEventListener('load', function () {
+    console.log(window.__spatialNavigation__);
+    window.__spatialNavigation__ && window.__spatialNavigation__.enableExperimentalAPIs();
+});
+
+/**
  * Event handler for highlight and tooltip.
  */
 document.addEventListener('keyup', (e) => {
@@ -67,6 +75,9 @@ document.addEventListener('keyup', (e) => {
                     actElement = document.activeElement;
 
                     actElement.classList.add(ACTIVE_ELEMENT_HIGHLIGHT);
+                    if(!window.__spatialNavigation__.findNextTarget) {
+                        window.__spatialNavigation__ && window.__spatialNavigation__.enableExperimentalAPIs();
+                    }
 
                     left = window.__spatialNavigation__.findNextTarget(actElement, 'left');
                     right = window.__spatialNavigation__.findNextTarget(actElement, 'right');
