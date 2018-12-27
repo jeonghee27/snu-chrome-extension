@@ -8,7 +8,7 @@ function setOption(tabId) {
     }, (items) => {
         items.keyMode = items.isOn ? items.keyMode : 'NONE';
         console.log(items.keyMode);
-        const codeString = `window.__spatialNavigation__.setKeyMode('${items.keyMode}')`;
+        const codeString = `window.__spatialNavigation__.keyMode = '${items.keyMode}'`;
         chrome.tabs.executeScript(tabId, {
             code: codeString
         }, (err) => {

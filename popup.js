@@ -1,10 +1,10 @@
 /**
- * call setKeyMode
+ * set keyMode
  * @param {string} mode keyMode string
  */
 function setKeyOption(mode) {
     chrome.tabs.query({}, (tabs) => {
-        const setCode = `window.__spatialNavigation__.setKeyMode('${mode}')`;
+        const setCode = `window.__spatialNavigation__.keyMode = '${mode}'`;
         for (let i = 0; i < tabs.length; i++) {
             chrome.tabs.executeScript(tabs[i].id, {
                 code: setCode
