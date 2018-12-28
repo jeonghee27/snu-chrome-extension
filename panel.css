@@ -4,14 +4,21 @@
 
 div {
   font-size: 1em;
-  line-height: 1.7em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+h2 {
+  color: #1e669f
+}
+
 h3 {
-  line-height:1.5em;
+  margin: 10px 6px 6px 6px;
+}
+
+.inline-block {
+  display: inline-block;
 }
 
 body {
@@ -23,7 +30,7 @@ body {
   color: rgb(22, 21, 21);
   font-size: 14px;
 }
-  
+
 .header {
   height: 8rem;
 }
@@ -34,7 +41,7 @@ html, body {
 
 /* CSS for devtool block */
 /* https://codepen.io/osublake/pen/jrqjdy */
-  
+
 .item-content {
   border: 0px solid rgba(123, 123, 123, 0.498039);
   border-radius: 4px;
@@ -51,10 +58,10 @@ html, body {
 
 /* css for line separator of devtool block */
 /* https://codepen.io/ibrahimjabbari/pen/ozinB */
-  
+
 hr {
-  border: 0; 
-  height: 1px; 
+  border: 0;
+  height: 1px;
   margin-top: 3px;
   margin-bottom: 3px;
   margin-left: 7%;
@@ -62,7 +69,7 @@ hr {
   background-image: -webkit-linear-gradient(left, #f0f0f0, #8c8b8b62, #f0f0f0);
   background-image: -moz-linear-gradient(left, #f0f0f0, #8c8b8b62, #f0f0f0);
   background-image: -ms-linear-gradient(left, #f0f0f0, #8c8b8b62, #f0f0f0);
-  background-image: -o-linear-gradient(left, #f0f0f0, #8c8b8b62, #f0f0f0); 
+  background-image: -o-linear-gradient(left, #f0f0f0, #8c8b8b62, #f0f0f0);
 }
 
 /* css for checkbox */
@@ -206,7 +213,7 @@ hr {
 .pure-material-checkbox > input:checked:disabled + span::before,
 .pure-material-checkbox > input:indeterminate:disabled + span::before {
   border-color: transparent;
-  background-color: currentColor;
+  background-color: currentColor;`
 }
 
 /* CSS for tooltip */

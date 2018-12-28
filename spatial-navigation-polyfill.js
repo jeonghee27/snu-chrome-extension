@@ -1272,6 +1272,6 @@
 
   window.addEventListener('load', function() {
     initiateSpatialNavigation();
-    enableExperimentalAPIs(false);
+    enableExperimentalAPIs(true);
   });
 })();

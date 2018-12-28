@@ -63,34 +63,41 @@
     </div><br>
 
     <div class="item-content">
-        <h2>Spatnav Search  <i class="qtip tip-bottom" data-tip="Find next Spatnav of current element">?</i></h2>
-        <h3>up: <div id="search_up"></div>
-        </h3>
-        <hr>
-        <h3>down: <div id="search_down"></div>
-        </h3>
-        <hr>
-        <h3>left: <div id="search_left"></div>
-        </h3>
-        <hr>
-        <h3>right: <div id="search_right"></div>
-        </h3>
+        <h2>Next Target  <i class="qtip tip-bottom" data-tip="Find next element">?</i></h2>
+        <div>
+          <h3 class="inline-block">up:</h3> <span id="up" class="inline-block"></span>
+        </div>
+        <div>
+          <h3 class="inline-block">down:</h3> <span id="down" class="inline-block"></span>
+        </div>
+        <div>
+          <h3 class="inline-block">left:</h3> <span id="left" class="inline-block"></span>
+        </div>
+        <div>
+          <h3 class="inline-block">right:</h3> <span id="right" class="inline-block"></span>
+        </div>
     </div><br>
 
     <div class="item-content">
-        <h2>Next Target  <i class="qtip tip-bottom" data-tip="Find next element">?</i></h2>
-        <h3>up: <div id="up"></div>
-        </h3>
-        <hr>
-        <h3>down: <div id="down"></div>
-        </h3>
-        <hr>
-        <h3>left: <div id="left"></div>
-        </h3>
-        <hr>
-        <h3>right: <div id="right"></div>
-        </h3>
+        <h2>spatialNavigationSearch  <i class="qtip tip-bottom" data-tip="Find next Spatnav of current element">?</i></h2>
+        <div>
+          <h3 class="inline-block">up:</h3>
+          <span id="search_up" class="inline-block"></span>
+        </div>
+        <div>
+          <h3 class="inline-block">down:</h3>
+          <span id="search_down" class="inline-block"></span>
+        </div>
+        <div>
+          <h3 class="inline-block">left:</h3>
+          <span id="search_left" class="inline-block"></span>
+        </div>
+        <div>
+          <h3 class="inline-block">right:</h3>
+          <span id="search_right" class="inline-block"></span>
+        </div>
     </div><br>
+
 
     <div class="item-content">
         <h2>Focusable Areas <i class="qtip tip-bottom" data-tip="Focusable elements below current element">?</i></h2>
@@ -103,21 +110,23 @@
 
     <div class="item-content">
         <h2>Next Candidates <i class="qtip tip-bottom" data-tip="Candidates of focusing for direction">?</i></h2>
-        <h3>up: <div id="candidates1"></div>
-        </h3>
-        <hr>
-        <h3>down: <div id="candidates2">
-                <div id="candidates_down"></div>
+        <h3>up: <div id="candidates-area-up">
+                <div id="candidates-up"></div>
             </div>
         </h3>
         <hr>
-        <h3>left: <div id="candidates3">
-                <div id="candidates_left"></div>
+        <h3>down: <div id="candidates-area-down">
+                <div id="candidates-down"></div>
             </div>
         </h3>
         <hr>
-        <h3>right: <div id="candidates4">
-                <div id="candidates_right"></div>
+        <h3>left: <div id="candidates-area-left">
+                <div id="candidates-left"></div>
+            </div>
+        </h3>
+        <hr>
+        <h3>right: <div id="candidates-area-right">
+                <div id="candidates-right"></div>
             </div>
         </h3>
     </div><br>

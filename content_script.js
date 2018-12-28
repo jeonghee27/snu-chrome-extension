@@ -11,8 +11,13 @@ function blurHappened() {
 const NEXT_TARGET_HIGHLIGHT = 'next_target_highlight';
 const ACTIVE_ELEMENT_HIGHLIGHT = 'active_element_highlight';
 
-let left; let right; let up; let down; let actElement;
-
+let actElement;
+let highlightedElement = {
+    left: null,
+    right: null,
+    up: null,
+    down: null
+};
 /**
  * Event handler for initializing.
  */
@@ -25,7 +30,7 @@ document.addEventListener('load', function () {
  * Event handler for highlight and tooltip.
  */
 document.addEventListener('keyup', (e) => {
-    const code = e.which || e.keyCode;
+    const keyCode = e.which || e.keyCode;
 
     // get keyMode settings.
     chrome.storage.local.get({
@@ -35,75 +40,43 @@ document.addEventListener('keyup', (e) => {
         CurrentOn: false
     }, (items) => {
         if (document.activeElement != undefined) {
-            // check whether pressed key is arrow key or tab key.
-            if (code == '37' || code == '38' || code == '39' || code == '40' || code == '9') {
+            // enable spatial navigation experimental APIs.
+            if(!window.__spatialNavigation__.findNextTarget) {
+                window.__spatialNavigation__ && window.__spatialNavigation__.enableExperimentalAPIs();
+            }
 
-                // remove hightlight and tooltip.
+            // Check whether pressed key is arrow key or tab key.
+            if ([9, 37, 38, 39, 40].includes(keyCode)) {
 
+                // remove highlight and tooltip.
                 if (actElement != null) {
                     actElement.classList.remove(ACTIVE_ELEMENT_HIGHLIGHT);
                 }
+                for (label in highlightedElement) {
+                    if (highlightedElement[label]) {
+                        highlightedElement[label].classList.remove(NEXT_TARGET_HIGHLIGHT);
 
-                if (left != null) {
-                    left.classList.remove(NEXT_TARGET_HIGHLIGHT);
-
-                    if (left.getAttribute('spatNavTooltip') != null) {
-                        left.removeAttribute('spatNavTooltip');
-                    }
-                }
-                if (right != null) {
-                    right.classList.remove(NEXT_TARGET_HIGHLIGHT);
-                    if (right.getAttribute('spatNavTooltip') != null) {
-                        right.removeAttribute('spatNavTooltip');
-                    }
-                }
-                if (up != null) {
-                    up.classList.remove(NEXT_TARGET_HIGHLIGHT);
-                    if (up.getAttribute('spatNavTooltip') != null) {
-                        up.removeAttribute('spatNavTooltip');
-                    }
-                }
-                if (down != null) {
-                    down.classList.remove(NEXT_TARGET_HIGHLIGHT);
-                    if (down.getAttribute('spatNavTooltip') != null) {
-                        down.removeAttribute('spatNavTooltip');
+                        if (highlightedElement[label].getAttribute('spatNavTooltip')) {
+                            highlightedElement[label].removeAttribute('spatNavTooltip');
+                        }
                     }
                 }
 
-                // add only spatNav and visible option are turned on.
+                // Add only spatNav and visible option are turned on.
                 if (items.isOn && items.isVisible) {
                     actElement = document.activeElement;
-
                     actElement.classList.add(ACTIVE_ELEMENT_HIGHLIGHT);
-                    if(!window.__spatialNavigation__.findNextTarget) {
-                        window.__spatialNavigation__ && window.__spatialNavigation__.enableExperimentalAPIs();
-                    }
 
-                    left = window.__spatialNavigation__.findNextTarget(actElement, 'left');
-                    right = window.__spatialNavigation__.findNextTarget(actElement, 'right');
-                    up = window.__spatialNavigation__.findNextTarget(actElement, 'up');
-                    down = window.__spatialNavigation__.findNextTarget(actElement, 'down');
+                    // Add highlight and tooltip.
+                    for (label in highlightedElement) {
+                        highlightedElement[label] = window.__spatialNavigation__.findNextTarget(actElement, label);
 
-                    // Add highlight and tooltip
-
-                    if (left != undefined) {
-                        left.classList.add(NEXT_TARGET_HIGHLIGHT);
-                        left.setAttribute('spatNavTooltip', 'left');
+                        if (highlightedElement[label]) {
+                            highlightedElement[label].classList.add(NEXT_TARGET_HIGHLIGHT);
+                            highlightedElement[label].setAttribute('spatNavTooltip', label);
+                        }
                     }
-                    if (right != undefined) {
-                        right.classList.add(NEXT_TARGET_HIGHLIGHT);
-                        right.setAttribute('spatNavTooltip', 'right');
-                    }
-                    if (up != undefined) {
-                        up.classList.add(NEXT_TARGET_HIGHLIGHT);
-                        up.setAttribute('spatNavTooltip', 'up');
-                    }
-                    if (down != undefined) {
-                        down.classList.add(NEXT_TARGET_HIGHLIGHT);
-                        down.setAttribute('spatNavTooltip', 'down');
-                    }
-                }
-                else if (items.isOn && items.CurrentOn) {
+                } else if (items.isOn && items.CurrentOn) {
                     actElement = document.activeElement;
                     actElement.classList.add(ACTIVE_ELEMENT_HIGHLIGHT);
                 }
