@@ -1,3 +1,9 @@
+const HOVER_ELEMENT_HIGHLIGHT = 'hover-element-highlight';
+const FOCUSABLE_ELEMENT_HIGHLIGHT = 'focusable-element-highlight';
+const DIRECTIONS = ['up', 'down', 'left', 'right'];
+let checkedCnt;
+
+
 const backgroundPageConnection = chrome.runtime.connect({
     name: 'panel'
 });
@@ -7,44 +13,99 @@ backgroundPageConnection.postMessage({
     tabId: chrome.devtools.inspectedWindow.tabId
 });
 
-let checkedCnt;
-const direction = ['up', 'down', 'left', 'right'];
 
-function getCodeStringForOutline(functionStr, outLineColor) {
+function getCodeStringForFocusableElements(functionStr, addClass) {
     // TODO : keep previous outline style.
     return `(function() {
         var candidates = ${functionStr};
         if (candidates) {
-            for (elem of candidates) {
-                elem.style.outline = "solid ${outLineColor}";
+            for (element of candidates) {
+                ${addClass} ? element.classList.add('${FOCUSABLE_ELEMENT_HIGHLIGHT}') : element.classList.remove('${FOCUSABLE_ELEMENT_HIGHLIGHT}');
             }
         }
     })();`;
 }
+
+// Show the result of 'findCandidates()'.
+function getCodeStringForGetCandidates(dir) {
+    return `(function() {
+        const disCandidate = [];
+        const candidates = __spatialNavigation__.findCandidates(document.activeElement, '${dir}');
+        if(candidates) {
+            for(let i = 0; i < candidates.length; i++) {
+                disCandidate[i] = [candidates[i].outerHTML, __spatialNavigation__.getDistanceFromTarget(document.activeElement, candidates[i], '${dir}')];
+            }
+        }
+        return disCandidate;
+    })();`;
+}
+
+// Get containerList
+function getCodeStringForContainerList() {
+    return `(function () {
+        let currentContainer = document.activeElement.getSpatialNavigationContainer();
+        const list = [];
+        while(currentContainer) {
+            list.push(currentContainer.outerHTML);
+            currentContainer = currentContainer.getSpatialNavigationContainer();
+        }
+        return list;
+    })();`;
+}
+
+
+function getCodeStringForMouseOverCandidates(dir, childIndex, addClass) {
+    // TODO : keep previous outline style.
+    return  `(function() {
+        let elements = __spatialNavigation__.findCandidates(document.activeElement, '${dir}');
+        if (elements && elements[${childIndex}]) {
+            ${addClass} ? elements[${childIndex}].classList.add('${HOVER_ELEMENT_HIGHLIGHT}') : elements[${childIndex}].classList.remove('${HOVER_ELEMENT_HIGHLIGHT}');
+        }
+    })();`;
+}
+
+
+function getCodeStringForMouseOverContainer(childIndex, addClass) {
+    return `(function() {
+        let element = document.activeElement.getSpatialNavigationContainer();
+        for (let i = 0; i < ${childIndex}; i++) {
+            element = element.getSpatialNavigationContainer();
+        }
+        ${addClass} ? element.classList.add('${HOVER_ELEMENT_HIGHLIGHT}') : element.classList.remove('${HOVER_ELEMENT_HIGHLIGHT}');
+    })();`;
+}
+
+function getCodeStringForMouseOver(functionStr, addClass) {
+    return `(function() {
+        let element = ${functionStr};
+        if (element) {
+            ${addClass} ? element.classList.add('${HOVER_ELEMENT_HIGHLIGHT}') : element.classList.remove('${HOVER_ELEMENT_HIGHLIGHT}');
+        }
+    })();`;
+}
+
 /**
  * Make outline on candidates of specific direction
- * @param {string} dir colored way
+ * @param {string} dir colored dir
  */
 function coloring(dir) {
     checkedCnt++;
-    const preColor = getCodeStringForOutline(`window.__spatialNavigation__.findCandidates(document.activeElement, '${dir}')`, '#B0C4DE');
     chrome.tabs.executeScript({
-        code: preColor
+        code: getCodeStringForFocusableElements(`window.__spatialNavigation__.findCandidates(document.activeElement, '${dir}')`, true)
     });
-    if (checkedCnt == 4) document.getElementById('Button_all').checked = true;
+    if (checkedCnt == 4) document.getElementById('button-all').checked = true;
 }
 
 /**
  * Remove outline on candidates of specific direction
- * @param {string} dir decolored way
+ * @param {string} dir decolored dir
  */
 function decoloring(dir) {
     checkedCnt--;
-    const preDecolor = getCodeStringForOutline(`window.__spatialNavigation__.findCandidates(document.activeElement, '${dir}')`, 'transparent');
     chrome.tabs.executeScript({
-        code: preDecolor
+        code: getCodeStringForFocusableElements(`window.__spatialNavigation__.findCandidates(document.activeElement, '${dir}')`, false)
     });
-    if (checkedCnt < 4) document.getElementById('Button_all').checked = false;
+    if (checkedCnt < 4) document.getElementById('button-all').checked = false;
 }
 
 /**
@@ -52,26 +113,19 @@ function decoloring(dir) {
  */
 document.body.addEventListener('click', (event) => {
     const id = event.srcElement.id;
-    if (id == 'Whole_page') {
-        if (document.getElementById(id).checked) {
-            ChangeCheckAll(true);
-            document.getElementById('Button_all').checked = true;
-            chrome.tabs.executeScript({
-                code: getCodeStringForOutline('document.body.focusableAreas({mode: "all"})', '#B0C4DE')
-            });
-        } else {
-            ChangeCheckAll(false);
-            chrome.tabs.executeScript({
-                code: getCodeStringForOutline('document.body.focusableAreas({mode: "all"})', 'transparent')
-            });
-            document.getElementById('Button_all').checked = false;
-        }
-    } else if (id == 'Button_all') {
+    if (id == 'whole-page') {
+        const isChecked = document.getElementById(id).checked;
+        ChangeCheckAll(isChecked);
+        document.getElementById('button-all').checked = isChecked;
+        chrome.tabs.executeScript({
+            code: getCodeStringForFocusableElements('document.body.focusableAreas({mode: "all"})', isChecked)
+        });
+    } else if (id == 'button-all') {
         if (document.getElementById(id).checked) ChangeCheckAll(true);
         else ChangeCheckAll(false);
     } else {
-        let way = id.substr(7);
-        if (direction.includes(way)) {
+        const way = id.substr(7);
+        if (DIRECTIONS.includes(way)) {
             if (document.getElementById(id).checked) coloring(way);
             else decoloring(way);
         }
@@ -83,18 +137,14 @@ document.body.addEventListener('click', (event) => {
  * @param {boolean} checked true = checked, false = unchecked
  */
 function ChangeCheckAll(checked) {
-    for (let idx = 0; idx < direction.length; idx++) {
-        try {
-            throw direction[idx];
-        } catch (way) {
-            document.getElementById('Button_'.concat(way)).checked = checked;
-            if (checked) {
-                coloring(way);
-                checkedCnt = 4;
-            } else {
-                decoloring(way);
-                checkedCnt = 0;
-            }
+    for (const dir of DIRECTIONS) {
+        document.getElementById(`button-${dir}`).checked = checked;
+        if (checked) {
+            coloring(dir);
+            checkedCnt = 4;
+        } else {
+            decoloring(dir);
+            checkedCnt = 0;
         }
     }
 }
@@ -103,20 +153,20 @@ function ChangeCheckAll(checked) {
  *
  * Send Message on every focus changing event
  */
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(() => {
     // remove all outline
     if (checkedCnt != 0) {
         ChangeCheckAll(false);
-        document.getElementById('Whole_page').checked = false;
-        document.getElementById('Button_all').checked = false;
+        document.getElementById('whole-page').checked = false;
+        document.getElementById('button-all').checked = false;
         chrome.tabs.executeScript({
-            code: getCodeStringForOutline('document.body.focusableAreas({mode: "all"})', 'transparent')
+            code: getCodeStringForFocusableElements('document.body.focusableAreas({mode: "all"})', false)
         });
     }
 
     // show information of Spatnav on devtool
     chrome.devtools.inspectedWindow.eval('document.body.focusableAreas({mode: "all"}).length;', { useContentScriptContext: true }, (result) => {
-        document.getElementById('focus_cnt').innerText = result;
+        document.getElementById('focus-cnt').innerText = result;
     });
 
     chrome.devtools.inspectedWindow.eval('__spatialNavigation__.isContainer(document.activeElement);', { useContentScriptContext: true }, (result) => {
@@ -128,52 +178,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
     });
 
-    chrome.devtools.inspectedWindow.eval('document.activeElement.focusableAreas({mode: "visible"}).map(a => a.outerHTML);', { useContentScriptContext: true }, (result) => {
-        const parentDiv = document.getElementById('visible');
-        while (parentDiv.firstChild) {
-            parentDiv.removeChild(parentDiv.firstChild);
-        }
-        if (result.length == 0) {
-            const content3 = document.createTextNode('None');
-            parentDiv.appendChild(content3);
-        } else {
-            let temp;
-            for (let i = 0; i < result.length; i++) {
-                const tempId = `visible_list_${i + 1}`;
-                const newDiv = document.createElement('div');
-                newDiv.id = tempId;
-                temp = `[${i + 1}] ${result[i].toString().replace(/(\r\n\t|\n|\r\t)/gm, '')}`;
-                const newContent = document.createTextNode(temp);
-                newDiv.appendChild(newContent);
-                parentDiv.appendChild(newDiv);
-            }
-        }
-    });
-
-    // Make list of focusable areas
-    chrome.devtools.inspectedWindow.eval('document.activeElement.focusableAreas({mode: "all"}).map(a => a.outerHTML);', { useContentScriptContext: true }, (result) => {
-        const parentDiv = document.getElementById('all');
-        while (parentDiv.firstChild) {
-            parentDiv.removeChild(parentDiv.firstChild);
-        }
-        if (result.length == 0) {
-            parentDiv.appendChild(document.createTextNode('None'));
-        } else {
-            let temp;
-            for (let i = 0; i < result.length; i++) {
-                const tempId = `all_list_${i + 1}`;
-                const newDiv = document.createElement('div');
-                newDiv.id = tempId;
-                temp = `[${i + 1}] ${result[i].toString().replace(/(\r\n\t|\n|\r\t)/gm, '')}`;
-                const newContent = document.createTextNode(temp);
-                newDiv.appendChild(newContent);
-                parentDiv.appendChild(newDiv);
-            }
-        }
-    });
 
     // Show the result of 'findNextTarget()' and 'spatialNavigationSearch()'.
-    for (const dir of direction) {
+    for (const dir of DIRECTIONS) {
         chrome.devtools.inspectedWindow.eval(`__spatialNavigation__.findNextTarget(document.activeElement, '${dir}').outerHTML;`, { useContentScriptContext: true }, (result) => {
             if (result === undefined) document.getElementById(dir).innerText = 'undefined';
             else document.getElementById(dir).innerText = result.toString().replace(/(\r\n\t|\n|\r\t)/gm, '');
@@ -181,32 +188,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
 
         chrome.devtools.inspectedWindow.eval(`document.activeElement.spatialNavigationSearch('${dir}').outerHTML;`, { useContentScriptContext: true }, (result) => {
-            const search_id = 'search_'.concat(dir);
-            document.getElementById(search_id).setAttribute('cmd', 'spatnav_search');
-            if (result === undefined) { document.getElementById(search_id).innerText = 'undefined'; }
-            else { document.getElementById(search_id).innerText = result.toString().replace(/(\r\n\t|\n|\r\t)/gm, ''); }
+            const searchElement = document.getElementById(`search-${dir}`);
+            searchElement.setAttribute('cmd', 'spatnav-search');
+            if (result === undefined) { searchElement.innerText = 'undefined'; }
+            else { searchElement.innerText = result.toString().replace(/(\r\n\t|\n|\r\t)/gm, ''); }
         });
     }
 
-    // Show the result of 'findCandidates()'.
-    function getCodeStringForGetCandidates(dir) {
-        return `(function() {
-            console.log('${dir}');
-            const dis_candidate = [];
-            const candidates = __spatialNavigation__.findCandidates(document.activeElement, '${dir}');
-            console.log(candidates);
-            if(candidates) {
-                for(let i = 0; i < candidates.length; i++) {
-                    dis_candidate[i] = [candidates[i].outerHTML, __spatialNavigation__.getDistanceFromTarget(document.activeElement, candidates[i], '${dir}')];
-                }
-            }
-            console.log(dis_candidate);
-            return dis_candidate;
-        })();`;
-    }
 
     // Make list of 4 way candidate
-    for (const dir of direction) {
+    for (const dir of DIRECTIONS) {
         chrome.devtools.inspectedWindow.eval(getCodeStringForGetCandidates(dir), { useContentScriptContext: true }, (result) => {
             const parentDiv = document.getElementById('candidates-area-' + dir);
             while (parentDiv.firstChild) {
@@ -215,190 +206,80 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (result.length === 0) {
                 parentDiv.appendChild(document.createTextNode('None'));
             } else {
-                let temp;
+                const currentDiv = document.getElementById('candidates-' + dir);
                 for (let i = 0; i < result.length; i++) {
-                    const tempId = `candidates-${dir}${i + 1}`;
                     const newDiv = document.createElement('div');
-                    newDiv.setAttribute('id', tempId);
-                    temp = `[${i + 1}] distance : ${parseInt(result[i][1])}, ${result[i][0].replace(/(\r\n\t|\n|\r\t)/gm, '')}`;
-                    const newContent = document.createTextNode(temp);
+                    newDiv.setAttribute('id', `candidates-${dir}-${i}`);
+                    newDiv.className = 'item';
+                    const newContent = document.createTextNode(`[${i}] distance : ${parseInt(result[i][1])}, ${result[i][0].replace(/(\r\n\t|\n|\r\t)/gm, '')}`);
                     newDiv.appendChild(newContent);
-                    const currentDiv = document.getElementById('candidates-' + dir);
                     parentDiv.insertBefore(newDiv, currentDiv);
                 }
             }
         });
     }
 
-    // Make list of container
-    chrome.devtools.inspectedWindow.eval("function container_list(){ var temp = document.activeElement.getSpatialNavigationContainer(); var list = []; var i = 0; while( temp != null){ list[i] = temp; i = i + 1; temp = temp.getSpatialNavigationContainer();} return list.map(a=>a.outerHTML);} container_list();", { useContentScriptContext: true }, (result) => {
-        if (result === undefined) {
-            document.getElementById('container_list').innerText = 'undefined';
-        } else {
-            let i;
-            let temp;
-            const parentDiv = document.getElementById('containerlist1');
-            while (parentDiv.firstChild) {
-                parentDiv.removeChild(parentDiv.firstChild);
-            }
 
-            for (i = 0; i < result.length; i++) {
-                const tempId = `container_list${i + 1}`;
+    // Make list of container
+    chrome.devtools.inspectedWindow.eval(getCodeStringForContainerList(), { useContentScriptContext: true }, (result) => {
+        const parentDiv = document.getElementById('container-list');
+        while (parentDiv.firstChild) {
+            parentDiv.removeChild(parentDiv.firstChild);
+        }
+
+        if (!result.length) {
+            document.getElementById('container-list').innerText = 'None';
+        } else {
+            for (let i = 0; i < result.length; i++) {
                 const newDiv = document.createElement('div');
-                newDiv.setAttribute('id', tempId);
-                temp = `[${i + 1}] ${result[i].replace(/(\r\n\t|\n|\r\t)/gm, '')}`;
-                const newContent = document.createTextNode(temp);
-                newDiv.appendChild(newContent);
-                const currentDiv = document.getElementById('container_list');
-                parentDiv.insertBefore(newDiv, currentDiv);
+                newDiv.className = 'item';
+                newDiv.setAttribute('id', `container-list-${i}`);
+                newDiv.innerText = `[${i}] ${result[i].replace(/(\r\n\t|\n|\r\t)/gm, '')}`;
+                parentDiv.appendChild(newDiv, parentDiv);
             }
         }
     });
 });
 
-/**
- * Text element mouseover event listener
- */
+function onMouseOverOut(id, isActive) {
+    if (DIRECTIONS.includes(id)) {
+        const dir = id;
+        chrome.tabs.executeScript({
+            code: getCodeStringForMouseOver(`window.__spatialNavigation__.findNextTarget(document.activeElement, '${dir}');`, isActive)
+        });
+    } else if (id.includes('search-')) {
+        const dir = id.substr('search-'.length);
+        chrome.tabs.executeScript({
+            code: getCodeStringForMouseOver(`document.activeElement.spatialNavigationSearch('${dir}');`, isActive)
+        });
+    } else if (id.includes('container-list-')) {
+        const childIndex = parseInt(id.substr('container-list-'.length));
+        chrome.tabs.executeScript({
+            code: getCodeStringForMouseOverContainer(childIndex, isActive)
+        });
+    } else {
+        for (const dir of DIRECTIONS) {
+            if (id.includes(`candidates-${dir}-`)) {
+                const childIndex = parseInt(id.substr(`candidates-${dir}-`.length));
+                chrome.tabs.executeScript({
+                    code: getCodeStringForMouseOverCandidates(dir, childIndex, isActive)
+                });
+                return;
+            }
+        }
+    }
+}
+
 document.body.addEventListener('mouseover', (event) => {
     const id = event.srcElement.id;
-    if (id) {
-        if (direction.includes(id)) mouseOver(id);
-        else if (id.includes('search_')) mouseOver(id);
-        else if (id.includes('visible_list')) {
-            document.getElementById(id).style.color = '#d62d20';
-            var index = parseInt(id.substr(13)) - 1;
-            chrome.tabs.executeScript({
-                code: "var tmp = (document.activeElement.focusableAreas({\"mode\": \"visible\"})[".concat(index, "]); if (tmp) {tmp.style.backgroundColor = \"#FCADAB\"; tmp.style.outline = \"thick #FFC0CB\";}")
-            });
-        } else if (id.includes('all_list')) {
-            document.getElementById(id).style.color = '#d62d20';
-            var index = parseInt(id.substr(9)) - 1;
-            chrome.tabs.executeScript({
-                code: "var tmp = (document.activeElement.focusableAreas({\"mode\": \"all\"})[".concat(index, "]); if (tmp) {tmp.style.backgroundColor = \"#FCADAB\"; tmp.style.outline = \"thick #FFC0CB\";}")
-            });
-        } else if (id.includes('candidates-up')) {
-            document.getElementById(id).style.color = '#d62d20';
-            var index = parseInt(id.substr(13)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"up"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "#FCADAB"; temp[${index}].style.outline = "thick #FFC0CB"}}`
-            });
-        } else if (id.includes('candidates-down')) {
-            document.getElementById(id).style.color = '#d62d20';
-            var index = parseInt(id.substr(15)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"down"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "#FCADAB"; temp[${index}].style.outline = "thick #FFC0CB"}}`
-            });
-        } else if (id.includes("candidates-left")) {
-            document.getElementById(id).style.color = "#d62d20";
-            var index = parseInt(id.substr(15)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"left"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "#FCADAB"; temp[${index}].style.outline = "thick #FFC0CB"}}`
-            });
-        } else if (id.includes("candidates-right")) {
-            document.getElementById(id).style.color = "#d62d20";
-            var index = parseInt(id.substr(16)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"right"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "#FCADAB"; temp[${index}].style.outline = "thick #FFC0CB"}}`
-            });
-        } else if (id.includes("container_list")) {
-            document.getElementById(id).style.color = "#d62d20";
-            var index = parseInt(id.substr(14)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = document.activeElement.getSpatialNavigationContainer(); for(var i = 0; i < ${index}; i++) { temp = temp.getSpatialNavigationContainer();} temp.style.backgroundColor = "#FCADAB"; temp.style.outline = "thick #FFC0CB";`
-            });
-        }
+    if(id) {
+        onMouseOverOut(id, true);
     }
 });
 
-/**
- * Text element mouseout event listener
- */
-document.body.addEventListener("mouseout", (event) => {
+document.body.addEventListener('mouseout', (event) => {
     const id = event.srcElement.id;
-    if (id) {
-        if (direction.includes(id)) mouseOut(id);
-        else if (id.includes('search_')) mouseOut(id);
-        else if (id.includes('visible_list')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(13)) - 1;
-            chrome.tabs.executeScript({
-                code: "var tmp = (document.activeElement.focusableAreas({\"mode\": \"visible\"})[".concat(index, "]); if (tmp) {tmp.style.backgroundColor = \"transparent\"; tmp.style.outline = \"transparent\";}")
-            });
-        } else if (id.includes('all_list')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(9)) - 1;
-            chrome.tabs.executeScript({
-                code: "var tmp = (document.activeElement.focusableAreas({\"mode\": \"all\"})[".concat(index, "]); if (tmp) {tmp.style.backgroundColor = \"transparent\"; tmp.style.outline = \"transparent\";}")
-            });
-        } else if (id.includes('candidates-up')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(13) - 1);
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"up"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "transparent"; temp[${index}].style.outline = "transparent"}}`
-            });
-        } else if (id.includes('candidates-down')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(15)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"down"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "transparent"; temp[${index}].style.outline = "transparent"}}`
-            });
-        } else if (id.includes('candidates-left')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(15)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"left"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "transparent"; temp[${index}].style.outline = "transparent"}}`
-            });
-        } else if (id.includes('candidates-right')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(16)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = __spatialNavigation__.findCandidates(document.activeElement,"right"); if (temp){if (temp[${index}]){temp[${index}].style.backgroundColor = "transparent"; temp[${index}].style.outline = "transparent"}}`
-            });
-        } else if (id.includes('container_list')) {
-            document.getElementById(id).style.color = 'rgb(61, 60, 60)';
-            var index = parseInt(id.substr(14)) - 1;
-            chrome.tabs.executeScript({
-                code: `var temp = document.activeElement.getSpatialNavigationContainer(); for(var i = 0; i < ${index}; i++) { temp = temp.getSpatialNavigationContainer();} temp.style.backgroundColor = "transparent"; temp.style.outline = "transparent";`
-            });
-        }
+    if(id) {
+        onMouseOverOut(id, false);
     }
 });
-
-
-/**
- * Mouseover / out event of next element text
- * @param {string} way coloring direction
- */
-function mouseOut(way) {
-    if ((document.getElementById(way).innerText == 'undefined') || (document.getElementById(way) == null)) return;
-
-    document.getElementById(way).style.color = 'rgb(61, 60, 60)';
-
-    if (document.getElementById(way).getAttribute('cmd') == 'next') {
-        chrome.tabs.executeScript({
-            code: "var tmp = window.__spatialNavigation__.findNextTarget(document.activeElement, \"".concat(way, "\"); if (tmp) {tmp.style.backgroundColor = \"transparent\"; tmp.style.outline = \"transparent\";}")
-        });
-    } else if (document.getElementById(way).getAttribute("cmd") == "spatnav_search") {
-        const realWay = way.substr(7);
-        chrome.tabs.executeScript({
-            code: "var tmp = document.activeElement.spatialNavigationSearch(\"".concat(realWay, "\"); if (tmp) {tmp.style.backgroundColor = \"transparent\"; tmp.style.outline = \"transparent\";}")
-        });
-    }
-}
-
-function mouseOver(way) {
-    if (document.getElementById(way).innerText == 'undefined') return;
-
-    document.getElementById(way).style.color = '#d62d20';
-
-    if (document.getElementById(way).getAttribute('cmd') == 'next') {
-        chrome.tabs.executeScript({
-            code: "var tmp = window.__spatialNavigation__.findNextTarget(document.activeElement, \"".concat(way, "\"); if (tmp) {tmp.style.backgroundColor = \"#FCADAB\"; tmp.style.outline = \"thick #FFC0CB\";}")
-        });
-    } else if (document.getElementById(way).getAttribute('cmd') == 'spatnav_search') {
-        const realWay = way.substr(7);
-        chrome.tabs.executeScript({
-            code: "var tmp = document.activeElement.spatialNavigationSearch(\"".concat(realWay, "\"); if (tmp) {tmp.style.backgroundColor = \"#FCADAB\"; tmp.style.outline = \"thick #FFC0CB\";}")
-        });
-    }
-}

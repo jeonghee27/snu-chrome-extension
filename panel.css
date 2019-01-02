@@ -21,6 +21,10 @@ h3 {
   display: inline-block;
 }
 
+#container {
+  margin-left: 20px;
+}
+
 body {
   background: rgb(238,238,238);
   width:100%;
@@ -39,21 +43,20 @@ html, body {
   height: 100%;
 }
 
-/* CSS for devtool block */
-/* https://codepen.io/osublake/pen/jrqjdy */
-
 .item-content {
-  border: 0px solid rgba(123, 123, 123, 0.498039);
+  border: 0px;
   border-radius: 4px;
   color: rgb(61, 60, 60);
-  background-color: rgb(255, 255, 255);
-  box-shadow: rgba(0,0,0,0.2) 0px 1px 2px 0px;
-  margin-left: 2%;
-  margin-right: 2%;
-  padding-top: 1%;
-  padding-bottom: 1%;
-  padding-left: 2%;
-  padding-right: 5%;
+  background-color: white;
+  box-shadow: lightgray 0px 2px 3px 0px;
+  margin: 10px;
+  padding: 15px;
+  min-height: 50px;
+}
+
+.item-content .item:hover{
+  color: #d62d20;
+  cursor: pointer;
 }
 
 /* css for line separator of devtool block */
@@ -223,6 +226,7 @@ hr {
 
 /*tipped element. should be inline-block or block*/
 .qtip {
+  z-index: 100;
   display: inline-block;
   position: relative;
   cursor: pointer;

@@ -8,8 +8,8 @@ function blurHappened() {
     });
 }
 
-const NEXT_TARGET_HIGHLIGHT = 'next_target_highlight';
-const ACTIVE_ELEMENT_HIGHLIGHT = 'active_element_highlight';
+const NEXT_TARGET_HIGHLIGHT = 'next-target-highlight';
+const ACTIVE_ELEMENT_HIGHLIGHT = 'active-element-highlight';
 
 let actElement;
 let highlightedElement = {

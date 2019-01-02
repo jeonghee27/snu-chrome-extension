@@ -12,9 +12,9 @@
     <div class="item-content">
         <section class="content">
             <h2>View Focusable Element  <i class="qtip tip-bottom" data-tip="Focusable elements based on entire page or current element.">?</i></h2>
-            <h3>There are <span id="focus_cnt" style="color:#d62d20;"></span> focusable elements</h3>
+            <h3>There are <span id="focus-cnt" style="color:#d62d20;"></span> focusable elements</h3>
             <h3><label class="pure-material-checkbox">
-                    <input type="checkbox" id="Whole_page" value="right">
+                    <input type="checkbox" id="whole-page" value="right">
                     <span>Inside whole page</span>
                 </label>
             </h3>
@@ -22,31 +22,31 @@
                 <div style="margin-top: 5px">
                     <span style="margin: 0px 10px 0px 10px">
                         <label class="pure-material-checkbox">
-                            <input type="checkbox" id="Button_all" value="btn_all">
+                            <input type="checkbox" id="button-all" value="btn-all">
                             <span>All</span>
                         </label>
                     </span>
                     <span style="margin: 0px 10px 0px 10px">
                         <label class="pure-material-checkbox">
-                            <input type="checkbox" id="Button_up" value="up">
+                            <input type="checkbox" id="button-up" value="up">
                             <span>Up</span>
                         </label>
                     </span>
                     <span style="margin: 0px 10px 0px 10px">
                         <label class="pure-material-checkbox">
-                            <input type="checkbox" id="Button_down" value="down">
+                            <input type="checkbox" id="button-down" value="down">
                             <span>Down</span>
                         </label>
                     </span>
                     <span style="margin: 0px 10px 0px 10px">
                         <label class="pure-material-checkbox">
-                            <input type="checkbox" id="Button_left" value="left">
+                            <input type="checkbox" id="button-left" value="left">
                             <span>Left</span>
                         </label>
                     </span>
                     <span style="margin: 0px 10px 0px 10px">
                         <label class="pure-material-checkbox">
-                            <input type="checkbox" id="Button_right" value="right">
+                            <input type="checkbox" id="button-right" value="right">
                             <span>Right</span>
                         </label>
                     </span>
@@ -56,25 +56,28 @@
     </div><br>
 
     <div class="item-content">
-        <h2>Is it Container?  <i class="qtip tip-bottom" data-tip="Is the current element a container?">?</i></h2>
-        <h3>
-            <div id="container"></div>
-        </h3>
+        <h2 class="inline-block">Is it Container?  <i class="qtip tip-bottom" data-tip="Is the current element a container?">?</i></h2>
+        <div id="container" class="inline-block"></div>
+    </div><br>
+
+    <div class="item-content">
+        <h2>List of Parent Containers <i class="qtip tip-bottom" data-tip="list of containers to topmost container">?</i></h2>
+        <div id="container-list"></div>
     </div><br>
 
     <div class="item-content">
         <h2>Next Target  <i class="qtip tip-bottom" data-tip="Find next element">?</i></h2>
         <div>
-          <h3 class="inline-block">up:</h3> <span id="up" class="inline-block"></span>
+          <h3 class="inline-block">up:</h3> <span id="up" class="inline-block item"></span>
         </div>
         <div>
-          <h3 class="inline-block">down:</h3> <span id="down" class="inline-block"></span>
+          <h3 class="inline-block">down:</h3> <span id="down" class="inline-block item"></span>
         </div>
         <div>
-          <h3 class="inline-block">left:</h3> <span id="left" class="inline-block"></span>
+          <h3 class="inline-block">left:</h3> <span id="left" class="inline-block item"></span>
         </div>
         <div>
-          <h3 class="inline-block">right:</h3> <span id="right" class="inline-block"></span>
+          <h3 class="inline-block">right:</h3> <span id="right" class="inline-block item"></span>
         </div>
     </div><br>
 
@@ -82,60 +85,43 @@
         <h2>spatialNavigationSearch  <i class="qtip tip-bottom" data-tip="Find next Spatnav of current element">?</i></h2>
         <div>
           <h3 class="inline-block">up:</h3>
-          <span id="search_up" class="inline-block"></span>
+          <span id="search-up" class="inline-block item"></span>
         </div>
         <div>
           <h3 class="inline-block">down:</h3>
-          <span id="search_down" class="inline-block"></span>
+          <span id="search-down" class="inline-block item"></span>
         </div>
         <div>
           <h3 class="inline-block">left:</h3>
-          <span id="search_left" class="inline-block"></span>
+          <span id="search-left" class="inline-block item"></span>
         </div>
         <div>
           <h3 class="inline-block">right:</h3>
-          <span id="search_right" class="inline-block"></span>
+          <span id="search-right" class="inline-block item"></span>
         </div>
-    </div><br>
-
-
-    <div class="item-content">
-        <h2>Focusable Areas <i class="qtip tip-bottom" data-tip="Focusable elements below current element">?</i></h2>
-        <h3>visible: <div id="visible"></div>
-        </h3>
-        <hr>
-        <h3>all: <div id="all"></div>
-        </h3>
     </div><br>
 
     <div class="item-content">
         <h2>Next Candidates <i class="qtip tip-bottom" data-tip="Candidates of focusing for direction">?</i></h2>
-        <h3>up: <div id="candidates-area-up">
-                <div id="candidates-up"></div>
-            </div>
-        </h3>
+        <h3>up: </h3>
+          <div id="candidates-area-up">
+            <div id="candidates-up"></div>
+          </div>
         <hr>
-        <h3>down: <div id="candidates-area-down">
-                <div id="candidates-down"></div>
-            </div>
-        </h3>
+        <h3>down: </h3>
+        <div id="candidates-area-down">
+          <div id="candidates-down"></div>
+        </div>
         <hr>
-        <h3>left: <div id="candidates-area-left">
-                <div id="candidates-left"></div>
-            </div>
-        </h3>
+        <h3>left: </h3>
+          <div id="candidates-area-left">
+            <div id="candidates-left"></div>
+          </div>
         <hr>
-        <h3>right: <div id="candidates-area-right">
-                <div id="candidates-right"></div>
-            </div>
-        </h3>
-    </div><br>
-
-    <div class="item-content">
-        <h2>List of Containers <i class="qtip tip-bottom" data-tip="list of containers to topmost container">?</i></h2>
-        <h3 id="containerlist1">
-            <div id="container_list"></div>
-        </h3>
+        <h3>right: </h3>
+        <div id="candidates-area-right">
+          <div id="candidates-right"></div>
+        </div>
     </div><br>
     <script src="panel.js"></script>
 </body>
