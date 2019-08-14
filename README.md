@@ -38,7 +38,7 @@
 3. Choose wheter to show candidates in 4 directions)
 
 ## How to install
-1. Clone the repository `git clone https://github.com/lgeweb/spatial-navigation-chrome-extension.git`.
+1. Clone the repository `git clone https://github.com/lgeweb/spatial-navigation-chrome-extension.git`. or Download zip file from https://github.com/jeonghee27/spatial-navigation-chrome-extension/archive/master.zip and decompress.
 2. Using chrome, navigate to `chrome://extensions`.
 3. Turn on the **Developer mode**.
 4. Click **LOAD UNPACKED** and select the extension directory.
