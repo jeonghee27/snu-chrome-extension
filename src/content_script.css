@@ -1,18 +1,22 @@
 :focus {
-  outline: 5px solid #428bca;
+/*  outline: 5px solid #428bca;*/
 }
 
 .next-target-highlight {
-  outline: 2px solid #5166bb !important;
+  background-color: #e1def8;
+  color: black;
 }
 
 .active-element-highlight {
-  background-color: #eeaadf !important;
+  background-color: #eca1dc;
   outline: 1px solid #c973c4 !important;
+  color: black;
 }
 
 .hover-element-highlight {
   background-color: #FCADAB !important;
+  outline: 3px solid red !important;
+  box-sizing: border-box !important;
 }
 
 .focusable-element-highlight {

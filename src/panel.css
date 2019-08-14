@@ -21,6 +21,10 @@ h3 {
   display: inline-block;
 }
 
+.hide {
+  display: none;
+}
+
 #container {
   margin-left: 20px;
 }
@@ -43,6 +47,37 @@ html, body {
   height: 100%;
 }
 
+.test-button {
+  background: #327aea;
+  padding: 10px 30px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 9px;
+  color: white;
+  font-weight: bold;
+}
+
+#test-stop {
+  background: gray;
+}
+
+#test-progress {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.test-button:focus, .test-button:active{
+  background: #0c3d89;
+}
+
+.error-list {
+  margin: 10px;
+  min-height: 30px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 2px solid #327aea;
+}
+
 .item-content {
   border: 0px;
   border-radius: 4px;
@@ -54,7 +89,11 @@ html, body {
   min-height: 50px;
 }
 
-.item-content .item:hover{
+.item-content .item {
+  display: block;
+}
+
+.item-content .item:hover {
   color: #d62d20;
   cursor: pointer;
 }

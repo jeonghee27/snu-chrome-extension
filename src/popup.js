@@ -61,7 +61,7 @@ function restoreOptions() {
         keyMode: 'ARROW',
         isOn: true,
         isVisible: false,
-        CurrentOn: false,
+        CurrentOn: true,
         VisNone : false
     }, (items) => {
         document.getElementById('keyMode').value = items.keyMode;

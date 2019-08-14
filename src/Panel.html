@@ -8,7 +8,19 @@
 </head>
 
 <body>
-    <h1 style="margin-left:2%">SpatNav Information</h1>
+    <div class="item-content">
+        <section class="content">
+          <h2>Spatial navigation friendly test</h2>
+          <button id="test-start" class="test-button">Start Test</button>
+          <button id="test-stop" class="test-button hide">Stop Test</button>
+          <div>
+            <progress id="test-progress" value="0" max="100" class="hide"></progress>
+          </div>
+          <div id="error-list" class="hide">
+              <h2>List of Error</h2>
+          </div>
+        </section>
+    </div><br>
     <div class="item-content">
         <section class="content">
             <h2>View Focusable Element  <i class="qtip tip-bottom" data-tip="Focusable elements based on entire page or current element.">?</i></h2>

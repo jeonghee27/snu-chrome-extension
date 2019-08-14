@@ -11,6 +11,11 @@
 
 
 (function () {
+  // For chrome extension.
+  let simulationElement = null;
+  let simulationBestTarget = null;
+  let simulationCandidates = null;
+
   // Turn on/off interest
   const focuslessSpatialNavigation = false;
   let _interestElement = null;
@@ -63,6 +68,7 @@
   const INTEREST_KEY_CODE = {13: 'enter', 27: 'esc'};
   const TAB_KEY_CODE = 9;
   let mapOfBoundRect = null;
+  let mapOfVisible = null;
   let startingPoint = null; // Indicates global variables for spatnav (starting position)
 
   /**
@@ -171,10 +177,12 @@
         if (focusNavigableArrowKey[dir]) {
           e.preventDefault();
           mapOfBoundRect = new Map();
+          mapOfVisible = new Map();
 
           navigate(dir);
 
           mapOfBoundRect = null;
+          mapOfVisible = null;
           startingPoint = null;
         }
       }
@@ -232,6 +240,10 @@
     // 4
     if (eventTarget === document || eventTarget === document.documentElement) {
       eventTarget = document.body || document.documentElement;
+    }
+
+    if (simulationElement) {
+      eventTarget = simulationElement;
     }
 
     // 5
@@ -301,7 +313,11 @@
       if (!createSpatNavEvents('beforefocus', bestCandidate, null, dir))
         return true;
 
-      focuslessSpatialNavigation ? interest(bestCandidate) : bestCandidate.focus();
+      if (simulationElement) {
+        simulationBestTarget = bestCandidate;
+      } else {
+        focuslessSpatialNavigation ? interest(bestCandidate) : bestCandidate.focus();
+      }
       return true;
     }
 
@@ -320,13 +336,17 @@
 
     // If there is any scrollable area among parent elements and it can be manually scrolled, scroll the document
     if (isScrollable(container, dir) && !isScrollBoundary(container, dir)) {
-      moveScroll(container, dir);
+      if(!simulationElement) {
+        moveScroll(container, dir);
+      }
       return true;
     }
 
     // If the spatnav container is document and it can be scrolled, scroll the document
     if (!container.parentElement && !isHTMLScrollBoundary(container, dir)) {
-      moveScroll(document.documentElement, dir);
+      if(!simulationElement) {
+        moveScroll(document.documentElement, dir);
+      }
       return true;
     }
     return false;
@@ -436,14 +456,19 @@
       }
 
       if (inside && (isContainer(targetElement) || targetElement.nodeName === 'BODY') && !(targetElement.nodeName === 'INPUT')) {
+        simulationCandidates = internalCandidates;
         bestTarget = selectBestCandidateFromEdge(targetElement, internalCandidates, dir);
       }
-      bestTarget = bestTarget || selectBestCandidate(targetElement, externalCandidates, dir);
+      if (!bestTarget) {
+        simulationCandidates = externalCandidates;
+        bestTarget = selectBestCandidate(targetElement, externalCandidates, dir);
+      }
 
       if (bestTarget && isDelegableContainer(bestTarget)) {
         // if best target is delegable container, then find descendants candidate inside delegable container.
         const innerTarget = getSpatialNavigationCandidates(bestTarget, {mode: 'all'});
         const descendantsBest = innerTarget.length > 0 ? targetElement.spatialNavigationSearch(dir, {candidates: innerTarget, container: bestTarget}) : null;
+        simulationCandidates = innerTarget;
         if (descendantsBest) {
           bestTarget = descendantsBest;
         } else if (!isFocusable(bestTarget)) {
@@ -451,6 +476,7 @@
           // then try to find another best target without curren best target.
           candidates.splice(candidates.indexOf(bestTarget), 1);
           bestTarget = candidates.length ? targetElement.spatialNavigationSearch(dir, {candidates: candidates, container: container}) : null;
+          simulationCandidates = candidates;
         }
       }
       return bestTarget;
@@ -498,7 +524,7 @@
     } else {
       return candidates.filter(candidate => {
         const candidateRect = getBoundingClientRect(candidate);
-        const candidateBody = (candidate.nodeName === 'IFRAME') ? candidate.contentDocument.body : null;
+        const candidateBody = (candidate.nodeName === 'IFRAME') ? (candidate.contentDocument && candidate.contentDocument.body) : null;
         return container.contains(candidate) &&
           candidate !== currentElm && candidateBody !== currentElm &&
           isOutside(candidateRect, eventTargetRect, dir);
@@ -1016,7 +1042,13 @@
    * @returns {boolean}
    */
   function isVisible(element) {
-    return (!element.parentElement) || (isVisibleStyleProperty(element) && hitTest(element));
+    // Memoization for performance
+    let visible = mapOfVisible && mapOfVisible.get(element);
+    if(typeof visible !== "boolean") {
+      visible = (!element.parentElement) || (isVisibleStyleProperty(element) && hitTest(element));
+      mapOfVisible && mapOfVisible.set(element, visible);
+    }
+    return visible;
   }
 
   /**
@@ -1527,109 +1559,13 @@
     }
 
     function findTarget(findCandidate, element, dir, option) {
-      let eventTarget = element;
-      let bestNextTarget = null;
+      simulationElement = element;
+      simulationBestTarget = null;
+      simulationCandidates = null;
 
-      // 4
-      if (eventTarget === document || eventTarget === document.documentElement) {
-        eventTarget = document.body || document.documentElement;
-      }
-
-      // 5
-      // At this point, spatialNavigationSearch can be applied.
-      // If startingPoint is either a scroll container or the document,
-      // find the best candidate within startingPoint
-      if ((isContainer(eventTarget) || eventTarget.nodeName === 'BODY') && !(eventTarget.nodeName === 'INPUT')) {
-        if (eventTarget.nodeName === 'IFRAME')
-          eventTarget = eventTarget.contentDocument.body;
-
-        const candidates = getSpatialNavigationCandidates(eventTarget, option);
-
-        // 5-2
-        if (Array.isArray(candidates) && candidates.length > 0) {
-          return findCandidate ? getFilteredSpatialNavigationCandidates(eventTarget, dir, candidates) : eventTarget.spatialNavigationSearch(dir, {candidates});
-        }
-        if (canScroll(eventTarget, dir)) {
-          return findCandidate ? [] : eventTarget;
-        }
-      }
-
-      // 6
-      // Let container be the nearest ancestor of eventTarget
-      let container = eventTarget.getSpatialNavigationContainer();
-      let parentContainer = (container.parentElement) ? container.getSpatialNavigationContainer() : null;
-
-      // When the container is the viewport of a browsing context
-      if (!parentContainer && ( window.location !== window.parent.location)) {
-        parentContainer = window.parent.document.documentElement;
-      }
-
-      // 7
-      while (parentContainer) {
-        const candidates = filteredCandidates(eventTarget, getSpatialNavigationCandidates(container, option), dir, container);
-
-        if (Array.isArray(candidates) && candidates.length > 0) {
-          bestNextTarget = eventTarget.spatialNavigationSearch(dir, {candidates, container});
-          if (bestNextTarget) {
-            return findCandidate ? candidates : bestNextTarget;
-          }
-        }
-
-        // If there isn't any candidate and the best candidate among candidate:
-        // 1) Scroll or 2) Find candidates of the ancestor container
-        // 8 - if
-        else if (canScroll(container, dir)) {
-          return findCandidate ? [] : eventTarget;
-        } else if (container === document || container === document.documentElement) {
-          container = window.document.documentElement;
-
-          // The page is in an iframe
-          if ( window.location !== window.parent.location ) {
-
-            // eventTarget needs to be reset because the position of the element in the IFRAME
-            // is unuseful when the focus moves out of the iframe
-            eventTarget = window.frameElement;
-            container = window.parent.document.documentElement;
-            if (container.parentElement)
-              parentContainer = container.getSpatialNavigationContainer();
-            else {
-              parentContainer = null;
-              break;
-            }
-          }
-        } else {
-          // avoiding when spatnav container with tabindex=-1
-          if (isFocusable(container)) {
-            eventTarget = container;
-          }
-
-          container = parentContainer;
-          if (container.parentElement)
-            parentContainer = container.getSpatialNavigationContainer();
-          else {
-            parentContainer = null;
-            break;
-          }
-        }
-      }
-
-      if (!parentContainer && container) {
-        // Getting out from the current spatnav container
-        const candidates = filteredCandidates(eventTarget, getSpatialNavigationCandidates(container, option), dir, container);
-
-        // 9
-        if (Array.isArray(candidates) && candidates.length > 0) {
-          bestNextTarget = eventTarget.spatialNavigationSearch(dir, {candidates, container});
-          if (bestNextTarget) {
-            return findCandidate ? candidates : bestNextTarget;
-          }
-        }
-      }
-
-      if (canScroll(container, dir)) {
-        bestNextTarget = eventTarget;
-        return bestNextTarget;
-      }
+      navigate(dir);
+      simulationElement = null;
+      return findCandidate ? simulationCandidates : simulationBestTarget;
     }
 
     return {
@@ -1643,6 +1579,10 @@
           }
         }
         return getDistance(getBoundingClientRect(element), getBoundingClientRect(candidateElement), dir);
+      },
+      useMemoizationForIsVisible : (option) => {
+        mapOfBoundRect = option ? new Map() : null;
+        mapOfVisible = option ? new Map() : null;
       }
     };
   }
